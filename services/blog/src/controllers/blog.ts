@@ -1,4 +1,4 @@
-import {type AuthenticatedRequest } from "../middleware/isAuth.js";
+import { type AuthenticatedRequest } from "../middleware/isAuth.js";
 import { redisClient } from "../server.js";
 import { sql } from "../utils/db.js";
 import TryCatch from "../utils/TryCatch.js";
@@ -27,7 +27,9 @@ export const getAllBlogs = TryCatch(async (req, res) => {
   } else if (searchQuery) {
     blogs = await sql`SELECT * FROM blogs WHERE (title ILIKE ${
       "%" + searchQuery + "%"
-    } OR description ILIKE ${"%" + searchQuery + "%"}) ORDER BY created_at DESC`;
+    } OR description ILIKE ${
+      "%" + searchQuery + "%"
+    }) ORDER BY created_at DESC`;
   } else if (category) {
     blogs =
       await sql`SELECT * FROM blogs WHERE category=${category} ORDER BY created_at DESC`;
@@ -76,45 +78,34 @@ export const getSingleBlog = TryCatch(async (req, res) => {
 });
 
 export const addComment = TryCatch(async (req: AuthenticatedRequest, res) => {
-  const { id: blogid } = req.params;
+  const { id } = req.params;
   const { comment } = req.body;
 
-  await sql`INSERT INTO comments (comment, blogid, userid, username) VALUES (${comment}, ${blogid}, ${req.user?._id}, ${req.user?.name}) RETURNING *`;
+  await sql`INSERT INTO comments (comment, blogid, userid, username) VALUES (${comment}, ${id},${req.user?._id},${req.user?.name}) RETURNING *`;
 
-  res.json({
-    message: "Comment Added",
-  });
+  return res.status(200).json({ message: "Comment added" });
 });
 
 export const getAllComments = TryCatch(async (req, res) => {
   const { id } = req.params;
-
   const comments =
-    await sql`SELECT * FROM comments WHERE blogid = ${id} ORDER BY created_at DESC`;
+    await sql`SELECT * FROM comments WHERE blogid=${id} ORDER BY created_at DESC`;
 
-  res.json(comments);
+  return res.status(200).json({ message: "", comments });
 });
 
 export const deleteComment = TryCatch(
   async (req: AuthenticatedRequest, res) => {
     const { commentid } = req.params;
-
-    const comment = await sql`SELECT * FROM comments WHERE id = ${commentid}`;
-
-    console.log(comment);
+    const comment = await sql`SELECT * FROM comments WHERE id=${commentid}`;
 
     if (comment[0]?.userid !== req.user?._id) {
-      res.status(401).json({
-        message: "You are not owner of this comment",
-      });
-      return;
+      return res
+        .status(401)
+        .json({ message: "You are not the owner of this comment" });
     }
-
-    await sql`DELETE FROM comments WHERE id = ${commentid}`;
-
-    res.json({
-      message: "Comment Deleted",
-    });
+    await sql`DELETE FROM comments WHERE id=${commentid}`;
+    return res.status(200).json({ message: "Comment Deleted" });
   }
 );
 
@@ -122,36 +113,24 @@ export const saveBlog = TryCatch(async (req: AuthenticatedRequest, res) => {
   const { blogid } = req.params;
   const userid = req.user?._id;
 
-  if (!blogid || !userid) {
-    res.status(400).json({
-      message: "Missing blog id or userid",
-    });
-    return;
+  if (!blogid || userid) {
+    return res.status(400).json({ message: "Missing blog id oruser id" });
   }
 
   const existing =
-    await sql`SELECT * FROM savedblogs WHERE userid = ${userid} AND blogid = ${blogid}`;
+    await sql`SELECT * FROM savedblogs WHERE userid=${userid} AND blogid =${blogid}`;
 
   if (existing.length === 0) {
-    await sql`INSERT INTO savedblogs (blogid, userid) VALUES (${blogid}, ${userid})`;
-
-    res.json({
-      message: "Blog Saved",
-    });
-    return;
-  } else {
-    await sql`DELETE FROM savedblogs WHERE userid = ${userid} AND blogid = ${blogid}`;
-
-    res.json({
-      message: "Blog Unsaved",
-    });
-    return;
+    await sql`INSERT INTO savedblogs (blogid,userid) VALUES (${blogid},${userid})`;
+    return res.status(200).json({ message: "Blog Saved" });
+  } else{
+    await sql`DELETE FROM savedblogs WHERE userid=${userid} AND blogid=${blogid}`
+    return res.status(200).json({ message: "Blog Unsaved" });
   }
 });
 
-export const getSavedBlog = TryCatch(async (req: AuthenticatedRequest, res) => {
-  const blogs =
-    await sql`SELECT * FROM savedblogs WHERE userid = ${req.user?._id}`;
+export const getSavedBlog =TryCatch(async(req:AuthenticatedRequest,res)=>{
+  const blogs = await sql`SELECT * FROM savedblogs WHERE userid=${req.user?._id}`
 
-  res.json(blogs);
-});
+  return res.status(200).json(blogs)
+})
