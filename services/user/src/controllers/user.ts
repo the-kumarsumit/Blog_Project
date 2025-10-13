@@ -7,6 +7,8 @@ import { v2 as cloudinary } from "cloudinary";
 import { oauth2Client } from "../utils/GoogleConfig.js";
 import axios from "axios";
 
+
+
 export const loginUser = TryCatch(async (req, res) => {
 
   const { code } = req.body
@@ -60,8 +62,7 @@ export const getUserProfile = TryCatch(async (req, res) => {
 
 export const updateUser = TryCatch(async (req: AuthenticatedRequest, res) => {
   const { name, instagram, facebook, linkedin, bio } = req.body;
-
-  const user = User.findByIdAndUpdate(
+  const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       name,
@@ -74,11 +75,9 @@ export const updateUser = TryCatch(async (req: AuthenticatedRequest, res) => {
       new: true,
     }
   );
-
   const token = jwt.sign({ user }, process.env.JWT_SECRET as string, {
     expiresIn: "5d",
   });
-
   return res.status(200).json({ message: "User Updated", user, token });
 });
 
