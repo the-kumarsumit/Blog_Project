@@ -23,7 +23,6 @@ const ProfilePage = () => {
         redirect("/login")
       }
     },[loading,user])
-    // if(!user) redirect("/login")
 
     const logoutHandler=()=>{
         logoutUser()

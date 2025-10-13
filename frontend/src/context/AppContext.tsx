@@ -56,6 +56,7 @@ interface AppContextType {
   blogLoading: boolean;
   searchQuery: string;
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  category: string;
   setCategory: React.Dispatch<React.SetStateAction<string>>;
   fetchBlogs: () => Promise<void>;
   savedBlogs: SavedBlogType[] | [];
@@ -84,8 +85,9 @@ export const AppProvider: React.FC<AppPrvoviderProps> = ({ children }) => {
 
       setUser(data);
       setIsAuth(true);
-      setLoading(false);
     } catch (error) {
+      console.error(error);
+    } finally {
       setLoading(false);
     }
   }
@@ -165,6 +167,7 @@ export const AppProvider: React.FC<AppPrvoviderProps> = ({ children }) => {
         logoutUser,
         blogs,
         blogLoading,
+        category,
         setCategory,
         searchQuery,
         setSearchQuery,
